@@ -1,0 +1,18 @@
+# sgtTwitchbot
+A IRC twitchbot that does many things.
+1) gives all active users a point for every minute they watch and stores it in a json file.
+2) accepts commands and responds 
+
+Setup
+
+1) create a .env file with the following values
+	- VIEWERS_FILE: full path to the file you want to store your viewer data
+	- CURRENT_VIEWERS_FILE: full path to the file where you want to store your current viewers
+	- username: Twitch username 
+	- client_id: your bot's client id 
+	- token: oauth token 
+	- channel: channel name 
+
+Commands
+	- add a command in the do_commands function in twitchbot.py
+	- commands are sent when the twitch message starts with a "!"
