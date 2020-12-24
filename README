@@ -16,3 +16,9 @@ Setup
 Commands
 	- add a command in the do_commands function in twitchbot.py
 	- commands are sent when the twitch message starts with a "!"
+
+Games
+	- games can be played using the !play <game> command
+	- new games need to be added to the game_manager class
+	- only one game can be active at a time 
+	- !gameover command will end all games 

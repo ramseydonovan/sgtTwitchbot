@@ -11,7 +11,9 @@ import time
 import json
 import point_utils
 import point_casino
+import game_manager
 import os
+import randfacts
 from dotenv import load_dotenv
 
 
@@ -34,6 +36,8 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
 
         # holds commands that have time before they can be executed again
         self.commands_in_timeout = {}
+
+        self. game_manager = game_manager.GameManager()
 
         # Get the channel id, we will need this for v5 API calls
         url = 'https://api.twitch.tv/kraken/users?login=' + channel
@@ -156,17 +160,29 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
             r = self.get_request()
             c.privmsg(self.channel, r['display_name'] + ' channel title is currently ' + r['status'])
 
+        # cheers!
+        elif cmd == 'cheers':
+            message = 'Cheers! HSCheers HSCheers'
+            c.privmsg(self.channel, message)
+
+        # output a random fact 
+        elif cmd == 'fact':
+            message = randfacts.getFact()
+            c.privmsg(self.channel, message)
+
         # Provide basic information to viewers for specific commands
         elif cmd == "drink":
             message = self.drink_command(username)                
             c.privmsg(self.channel, message)
 
+        # allow drink command to be used
         elif cmd == 'enable_drink':
             if username == 'sgtsavior14':
                 self.drink_enabled = True
                 message = 'drink command has been enabled! 50 points to make Donovan drink (!drink)'
                 c.privmsg(self.channel, message)
 
+        # prevent drink command from being used
         elif cmd == 'disable_drink':
             if username == 'sgtsavior14':
                 self.drink_enabled = False
@@ -191,7 +207,7 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
                 c.privmsg(self.channel, message)
 
         elif cmd == "schedule":
-            message = "This is an example bot, replace this text with your schedule text."            
+            message = "I stream mostly Thursday-Sunday"            
             c.privmsg(self.channel, message)
 
         # Show the number of points a user has
@@ -235,10 +251,55 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
             print (message)
             sys.stdout.flush()
 
+        # command use to active a game. Game logic is handled in game_manager.py
+        elif cmd == 'play':
+            message = ''
+            try:
+                game = e.arguments[0].split()[1]
+            except:
+                message = "Invalid play command! Example: !play deal"
+
+            if not message:
+                message = self.game_manager.select_game(game, username)
+
+            c.privmsg(self.channel, message)
+            print (message)
+            sys.stdout.flush()
+
+        # commnad used to select a case in deal or no deal game.
+        elif cmd == 'case':
+            message = ''
+
+            if not self.game_manager.check_game_is_active('deal'):
+                message = 'A Deal or no Deal game is not active right now.'
+
+            if not message:
+                try:
+                    case_number = e.arguments[0].split()[1]
+                except:
+                    message = "Invalid case command! Example: !case 3"
+
+            if not message:
+                message = self.game_manager.enter_game_input(case_number)
+
+            c.privmsg(self.channel, message)
+            print (message)
+            sys.stdout.flush()
+
+        # command used to remove any active games
+        elif cmd == 'gameover':
+            if username == 'sgtsavior14':
+                message = 'All games canceled'
+                self.game_manager.active_games = []
+
+                c.privmsg(self.channel, message)
+
 
         # The command was not recognized
         else:
             c.privmsg(self.channel, "Did not understand command: " + cmd)
+
+
 
 def launch_irc_bot(twitch_bot):
     twitch_bot.start()
