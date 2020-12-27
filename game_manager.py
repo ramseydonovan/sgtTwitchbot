@@ -40,8 +40,8 @@ class GameManager:
         return message
 
 
-    def enter_game_input(self, value):
-        message = self.active_games[0].process_input(value)
+    def enter_game_input(self, command, value):
+        message = self.active_games[0].process_input(command, value)
         if self.active_games[0].game_over == True:
             self.active_games = []
         return message

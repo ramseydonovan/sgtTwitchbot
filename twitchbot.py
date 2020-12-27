@@ -13,7 +13,6 @@ import point_utils
 import point_casino
 import game_manager
 import os
-import randfacts
 from dotenv import load_dotenv
 
 
@@ -22,6 +21,7 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
         self.client_id = client_id
         self.token = token
         self.channel = '#' + channel
+        self.streamer_username = username
 
         # True if drink command is enabled, false if disabled
         self.drink_enabled = False
@@ -109,6 +109,15 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
         time_remaining = self.command_timeouts[cmd] - time_passed
         return time_remaining
 
+
+    def get_fun_fact(self):
+        url ="https://uselessfacts.jsph.pl/random.json?language=en"
+        response = requests.request("GET", url)
+        data = json.loads(response.text)
+        useless_fact = data['text']
+        return useless_fact
+
+
     def drink_command(self, username):
         if not self.drink_enabled:
             message = 'Donovan is being responsible for some reason. "drink" command is currently disabled D:'
@@ -167,7 +176,7 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
 
         # output a random fact 
         elif cmd == 'fact':
-            message = randfacts.getFact()
+            message = self.get_fun_fact()
             c.privmsg(self.channel, message)
 
         # Provide basic information to viewers for specific commands
@@ -177,21 +186,21 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
 
         # allow drink command to be used
         elif cmd == 'enable_drink':
-            if username == 'sgtsavior14':
+            if username == self.streamer_username:
                 self.drink_enabled = True
                 message = 'drink command has been enabled! 50 points to make Donovan drink (!drink)'
                 c.privmsg(self.channel, message)
 
         # prevent drink command from being used
         elif cmd == 'disable_drink':
-            if username == 'sgtsavior14':
+            if username == self.streamer_username:
                 self.drink_enabled = False
                 self.commands_in_timeout.pop('drink', None)
                 message = 'Look at this lightweight... smh. Drink command is now disabled.'
                 c.privmsg(self.channel, message)
 
         elif cmd == 'refund':
-            if username == 'sgtsavior14':
+            if username == self.streamer_username:
                 message = ''
                 try:
                     cmd_args = e.arguments[0].split()
@@ -272,7 +281,7 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
 
             if not self.game_manager.check_game_is_active('deal'):
                 message = 'A Deal or no Deal game is not active right now.'
-
+            
             if not message:
                 try:
                     case_number = e.arguments[0].split()[1]
@@ -280,7 +289,19 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
                     message = "Invalid case command! Example: !case 3"
 
             if not message:
-                message = self.game_manager.enter_game_input(case_number)
+                message = self.game_manager.enter_game_input(cmd, case_number)
+
+            c.privmsg(self.channel, message)
+            print (message)
+            sys.stdout.flush()
+
+        elif cmd == 'deal' or cmd == 'nodeal' or cmd == 'swap' or cmd == 'noswap':
+            message = ''
+            if not self.game_manager.check_game_is_active('deal'):
+                message = 'A Deal or no Deal game is not active right now.'
+
+            if not message:
+                message = self.game_manager.enter_game_input(cmd, False)
 
             c.privmsg(self.channel, message)
             print (message)
@@ -288,7 +309,7 @@ class TwitchBot(irc.bot.SingleServerIRCBot):
 
         # command used to remove any active games
         elif cmd == 'gameover':
-            if username == 'sgtsavior14':
+            if username == self.streamer_username:
                 message = 'All games canceled'
                 self.game_manager.active_games = []
 

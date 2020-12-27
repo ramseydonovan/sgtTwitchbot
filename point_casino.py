@@ -65,7 +65,7 @@ class PointCasino:
             else:
                 self.winnings = self.wager * 5
 
-        if self.win == True and self.bonus_roll > 89:
+        if self.roll > 89 and self.bonus_roll > 89:
             self.winnings *= 2
 
         self.winnings = round(self.winnings)
